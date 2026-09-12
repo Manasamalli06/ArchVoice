@@ -1,0 +1,16 @@
+{
+  "name": "archvoice",
+  "version": "1.0.0",
+  "description": "ArchVoice - AI Conversational Project Assistant for AEC",
+  "main": "server/src/index.js",
+  "scripts": {
+    "setup": "npm install --prefix server && npm install --prefix client && npm run db:setup",
+    "db:setup": "npm run db:push --prefix server && npm run db:seed --prefix server",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

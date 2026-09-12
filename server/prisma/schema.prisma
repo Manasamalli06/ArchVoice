@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String     @id @default(uuid())
+  name        String
+  client      String
+  location    String
+  status      String     @default("In Progress")
+  progress    Int        @default(0)
+  startDate   DateTime
+  dueDate     DateTime
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  tasks       Task[]
+  approvals   Approval[]
+  documents   Document[]
+  activities  Activity[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  role      String
+  email     String   @unique
+  password  String?  @default("password123")
+  avatar    String?
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignedTo  String
+  status      String   @default("Pending")
+  priority    String   @default("Medium")
+  dueDate     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  reminders   Reminder[]
+}
+
+model Approval {
+  id          String   @id @default(uuid())
+  title       String
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  requestedBy String
+  status      String   @default("Pending")
+  dueDate     DateTime
+  createdAt   DateTime @default(now())
+}
+
+model Document {
+  id         String   @id @default(uuid())
+  name       String
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type       String
+  uploadedBy String
+  uploadedAt DateTime @default(now())
+  status     String   @default("Under Review")
+}
+
+model Activity {
+  id        String   @id @default(uuid())
+  message   String
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String?
+  createdAt DateTime @default(now())
+}
+
+model Reminder {
+  id        String   @id @default(uuid())
+  taskId    String?
+  task      Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  recipient String
+  message   String
+  status    String   @default("Active")
+  createdAt DateTime @default(now())
+}
