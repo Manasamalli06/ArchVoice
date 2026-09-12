@@ -5,9 +5,10 @@
   "main": "src/index.js",
   "type": "commonjs",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "npx prisma db push && node src/index.js",
     "dev": "nodemon src/index.js",
     "db:push": "prisma db push --accept-data-loss",
+    "db:generate": "prisma generate",
     "db:seed": "node src/db/seed.js"
   },
   "dependencies": {

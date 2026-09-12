@@ -9,8 +9,8 @@
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "build": "npm install --prefix server && npm install --prefix client && npm run build --prefix client",
-    "start": "cd server && npx prisma db push && node src/index.js"
+    "build": "npm install --prefix server && npm install --prefix client && npm run db:generate --prefix server && npm run build --prefix client",
+    "start": "npm start --prefix server"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
