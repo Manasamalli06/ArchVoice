@@ -117,8 +117,8 @@ export default function Header({
               className={`w-8 h-8 rounded-full object-cover border-2 transition-colors ${showProfile ? 'border-blue-500' : 'border-blue-500/40'}`}
             />
             <div className="hidden lg:block text-left">
-              <p className="text-xs font-semibold text-white leading-tight">{currentUser?.name || "Rahul Sharma"}</p>
-              <p className="text-[10px] text-slate-400 font-medium">{currentUser?.role || "Electrical Engineer"}</p>
+              <p className="text-xs font-semibold text-white leading-tight">{currentUser?.name || "User"}</p>
+              <p className="text-[10px] text-slate-400 font-medium">{currentUser?.role || "Architect"}</p>
             </div>
             <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${showProfile ? 'rotate-180' : ''}`} />
           </button>
@@ -140,17 +140,17 @@ export default function Header({
               <div className="flex justify-center -mt-10">
                 <img
                   src={currentUser?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150"}
-                  alt={currentUser?.name}
+                  alt={currentUser?.name || "User"}
                   className="w-20 h-20 rounded-2xl object-cover border-4 border-[#0d1322] shadow-lg"
                 />
               </div>
 
               {/* User Info */}
               <div className="text-center px-5 pt-3 pb-4 space-y-1">
-                <h3 className="text-base font-bold text-white">{currentUser?.name || 'Rahul Sharma'}</h3>
+                <h3 className="text-base font-bold text-white">{currentUser?.name || 'User'}</h3>
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
                   <Shield className="w-3 h-3" />
-                  {currentUser?.role || 'Electrical Engineer'}
+                  {currentUser?.role || 'Team Member'}
                 </span>
               </div>
 
@@ -160,7 +160,7 @@ export default function Header({
                   <Mail className="w-4 h-4 text-blue-400 shrink-0" />
                   <div>
                     <span className="text-[10px] text-slate-500 font-medium block">Email</span>
-                    <span className="text-slate-200 font-medium">{currentUser?.email || 'rahul.sharma@archscale.com'}</span>
+                    <span className="text-slate-200 font-medium">{currentUser?.email || 'N/A'}</span>
                   </div>
                 </div>
 
@@ -168,7 +168,7 @@ export default function Header({
                   <Briefcase className="w-4 h-4 text-indigo-400 shrink-0" />
                   <div>
                     <span className="text-[10px] text-slate-500 font-medium block">AEC Discipline</span>
-                    <span className="text-slate-200 font-medium">{currentUser?.role || 'Electrical Engineer'}</span>
+                    <span className="text-slate-200 font-medium">{currentUser?.role || 'Team Member'}</span>
                   </div>
                 </div>
 
