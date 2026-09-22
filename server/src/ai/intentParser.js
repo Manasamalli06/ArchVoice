@@ -98,21 +98,49 @@ function parseIntentFallback(text, activeProjectContext = null) {
   }
 
   // 4. Action Extraction: UPDATE_TASK
-  // Handles: "mark done", "finish task", "completed", "complete hvac"
-  if (lower.includes('mark') || lower.includes('finish') || lower.includes('completed') || lower.includes('complete') || lower.includes('done')) {
+  // Handles: "mark done", "finish task", "completed", "complete hvac", "uncompleted", "incomplete", "pending", "in progress", "reopen"
+  if (
+    lower.includes('mark') || 
+    lower.includes('finish') || 
+    lower.includes('completed') || 
+    lower.includes('complete') || 
+    lower.includes('done') ||
+    lower.includes('uncomplete') ||
+    lower.includes('incomplete') ||
+    lower.includes('pending') ||
+    lower.includes('in progress') ||
+    lower.includes('reopen') ||
+    lower.includes('open')
+  ) {
     let taskName = 'Electrical layout drawing';
     if (lower.includes('hvac')) taskName = 'HVAC ceiling plan & ducting';
     else if (lower.includes('facade') || lower.includes('3d')) taskName = 'Refinement of 3D façade render';
+
+    let targetStatus = 'Completed';
+    if (
+      lower.includes('uncomplete') || 
+      lower.includes('incomplete') || 
+      lower.includes('not complete') || 
+      lower.includes('pending') || 
+      lower.includes('reopen') || 
+      lower.includes('not done') || 
+      lower.includes('undo')
+    ) {
+      targetStatus = 'Pending';
+    } else if (lower.includes('in progress') || lower.includes('ongoing')) {
+      targetStatus = 'In Progress';
+    }
 
     return {
       intent: 'UPDATE_TASK',
       entities: {
         task: taskName,
-        status: 'Completed'
+        status: targetStatus
       },
       isDemoFallback: true
     };
   }
+
 
   // 5. Action Extraction: CREATE_REMINDER
   if (lower.includes('remind') || lower.includes('reminder') || lower.includes('notify') || lower.includes('alert')) {

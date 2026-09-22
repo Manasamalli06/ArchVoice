@@ -310,7 +310,23 @@ async function executeAction(intentResult, userQuery, userName = 'User') {
 
     case 'UPDATE_TASK': {
       const taskQuery = entities.task || 'Electrical layout';
-      const newStatus = entities.status || 'Completed';
+      
+      let newStatus = entities.status || 'Completed';
+      const queryLower = userQuery.toLowerCase();
+      if (
+        queryLower.includes('uncomplete') || 
+        queryLower.includes('incomplete') || 
+        queryLower.includes('not complete') || 
+        queryLower.includes('pending') || 
+        queryLower.includes('reopen') || 
+        queryLower.includes('open') || 
+        queryLower.includes('not done') || 
+        queryLower.includes('undo')
+      ) {
+        newStatus = 'Pending';
+      } else if (queryLower.includes('in progress') || queryLower.includes('ongoing')) {
+        newStatus = 'In Progress';
+      }
 
       // Find matching task
       const taskToUpdate = await prisma.task.findFirst({
@@ -335,6 +351,7 @@ async function executeAction(intentResult, userQuery, userName = 'User') {
         data: { status: newStatus },
         include: { project: true }
       });
+
 
       await prisma.activity.create({
         data: {
