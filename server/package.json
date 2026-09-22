@@ -9,8 +9,10 @@
     "dev": "nodemon src/index.js",
     "db:push": "prisma db push --accept-data-loss",
     "db:generate": "prisma generate",
-    "db:seed": "node src/db/seed.js"
+    "db:seed": "node src/db/seed.js",
+    "db:studio": "npx prisma studio"
   },
+
   "dependencies": {
     "@google/generative-ai": "^0.24.0",
     "@prisma/client": "^5.10.2",
