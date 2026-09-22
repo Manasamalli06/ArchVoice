@@ -11,7 +11,9 @@ import {
   ShieldCheck, 
   Activity,
   Sparkles,
-  Zap
+  Zap,
+  Download,
+  Loader2
 } from 'lucide-react';
 
 export default function ResponseWidget({ widgetType, data, onTaskUpdated, onNavigateTab }) {
@@ -227,22 +229,69 @@ export default function ResponseWidget({ widgetType, data, onTaskUpdated, onNavi
     }
 
     case 'DOCUMENT_LIST': {
-      if (!Array.isArray(data)) return null;
+      if (!Array.isArray(data) || data.length === 0) return null;
+
+      const handleDownloadDoc = async (doc) => {
+        try {
+          const response = await fetch(`http://localhost:5000/api/documents/${doc.id}/download`);
+          if (!response.ok) throw new Error('Download failed');
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          const contentDisposition = response.headers.get('Content-Disposition');
+          const match = contentDisposition && contentDisposition.match(/filename="(.+)"/);
+          a.download = match ? match[1] : doc.name.replace(/\.[^.]+$/, '') + '.pdf';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } catch (err) {
+          console.error('Assistant doc download error:', err);
+        }
+      };
 
       return (
         <div className="mt-3 space-y-2">
+          <div className="text-xs font-semibold text-slate-400 px-1 flex items-center justify-between">
+            <span>PROJECT DOCUMENTS ({data.length})</span>
+            {onNavigateTab && (
+              <button 
+                onClick={() => onNavigateTab('documents')} 
+                className="text-blue-400 hover:underline flex items-center gap-1 text-[11px]"
+              >
+                View all in Vault <ArrowUpRight className="w-3 h-3" />
+              </button>
+            )}
+          </div>
           {data.map((doc) => (
-            <div key={doc.id} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-blue-400" />
-                <div>
-                  <p className="text-white font-medium">{doc.name}</p>
-                  <span className="text-[10px] text-slate-400">{doc.type} • Uploaded by {doc.uploadedBy}</span>
+            <div key={doc.id} className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-all flex items-center justify-between gap-3 text-xs shadow-md">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-white font-medium truncate">{doc.name}</p>
+                  <p className="text-[10px] text-slate-400 truncate">
+                    {doc.type} • {doc.project ? doc.project.name : 'Project'} • Uploaded by {doc.uploadedBy}
+                  </p>
                 </div>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300">
-                {doc.status}
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
+                  doc.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-300'
+                }`}>
+                  {doc.status}
+                </span>
+                <button
+                  onClick={() => handleDownloadDoc(doc)}
+                  className="px-2.5 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-medium transition-all flex items-center gap-1.5 shadow-sm"
+                  title="Download generated PDF"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download PDF</span>
+                </button>
+              </div>
             </div>
           ))}
         </div>

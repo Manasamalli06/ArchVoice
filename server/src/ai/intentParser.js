@@ -18,6 +18,21 @@ function parseIntentFallback(text, activeProjectContext = null) {
     project = activeProjectContext;
   }
 
+  // 0. Greeting Detection ("hey", "hello", "hi", "good morning")
+  const greetingWords = ['hey', 'hello', 'hi', 'howdy', 'greetings', 'good morning', 'good afternoon', 'good evening'];
+  const trimmed = lower.trim();
+  const isGreeting = greetingWords.some(g => trimmed === g || trimmed === `${g} archvoice` || trimmed.startsWith(`${g} `));
+  const hasSpecificAction = lower.includes('task') || lower.includes('overdue') || lower.includes('download') || lower.includes('approval') || lower.includes('create') || lower.includes('mark') || lower.includes('remind') || lower.includes('who') || lower.includes('doc') || lower.includes('drawing');
+
+  if (isGreeting && !hasSpecificAction) {
+    return {
+      intent: 'GREETING',
+      entities: { project },
+      isDemoFallback: true
+    };
+  }
+
+
   // 2. Fuzzy Person / Team Member Extraction (handles misspellings from speech-to-text)
   let person = null;
   const knownPeople = [
@@ -154,14 +169,46 @@ function parseIntentFallback(text, activeProjectContext = null) {
     };
   }
 
-  // 10. Query: GET_DOCUMENTS
-  if (lower.includes('doc') || lower.includes('drawing') || lower.includes('dwg') || lower.includes('file') || lower.includes('boq')) {
+  // 10. Query: GET_DOCUMENTS / DOWNLOAD_DOCUMENT
+  if (
+    lower.includes('download') || 
+    lower.includes('pdf') || 
+    lower.includes('doc') || 
+    lower.includes('drawing') || 
+    lower.includes('dwg') || 
+    lower.includes('file') || 
+    lower.includes('boq') || 
+    lower.includes('blueprint') || 
+    lower.includes('schematic') ||
+    lower.includes('specification') ||
+    lower.includes('spec')
+  ) {
+    let docKeyword = null;
+    if (lower.includes('hvac')) docKeyword = 'hvac';
+    else if (lower.includes('electrical') || lower.includes('single line') || lower.includes('diagram')) docKeyword = 'electrical';
+    else if (lower.includes('boq') || lower.includes('quantities') || lower.includes('bill')) docKeyword = 'boq';
+    else if (lower.includes('structural') || lower.includes('floor plan') || lower.includes('layout')) docKeyword = 'structural';
+    else if (lower.includes('bim') || lower.includes('revit')) docKeyword = 'bim';
+    else if (lower.includes('soil') || lower.includes('bearing')) docKeyword = 'soil';
+    else if (lower.includes('fire') || lower.includes('safety') || lower.includes('evacuation')) docKeyword = 'fire';
+    else if (lower.includes('masterplan') || lower.includes('site')) docKeyword = 'masterplan';
+    else if (lower.includes('first') || lower.includes('1st') || lower.includes('one')) docKeyword = 'first';
+    else if (lower.includes('second') || lower.includes('2nd') || lower.includes('two')) docKeyword = 'second';
+    else if (lower.includes('third') || lower.includes('3rd') || lower.includes('three')) docKeyword = 'third';
+    else if (lower.includes('fourth') || lower.includes('4th') || lower.includes('four')) docKeyword = 'fourth';
+
     return {
       intent: 'GET_DOCUMENTS',
-      entities: { project },
+      entities: { 
+        project,
+        task: docKeyword,
+        document: docKeyword
+      },
       isDemoFallback: true
     };
   }
+
+
 
   // 11. Query: GET_RECENT_ACTIVITY
   if (lower.includes('activity') || lower.includes('change') || lower.includes('recent') || lower.includes('update')) {
@@ -202,7 +249,9 @@ YOUR TASK:
 Analyze the user request, ignore voice noise filler words, correct misspellings, and extract the primary intent and entities.
 
 Allowed intents:
+- GREETING: Simple friendly greeting like "hey", "hello", "hi", "good morning"
 - GET_PROJECT_STATUS: Overview of project progress, metrics, or status
+
 - GET_OVERDUE_TASKS: Overdue or delayed tasks
 - GET_PENDING_APPROVALS: Drawing sign-offs, submittals, approvals
 - GET_TASKS_BY_USER: Tasks assigned to a person

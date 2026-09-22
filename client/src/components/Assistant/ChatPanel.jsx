@@ -45,6 +45,7 @@ export default function ChatPanel({
   const suggestedPrompts = [
     'What is the current status of Project Alpha?',
     'Show me all overdue tasks.',
+    'Download drawings for Project Alpha.',
     'Who is responsible for the electrical drawing?',
     'Create a task for Rahul to finish the electrical drawing by Friday.',
     'Show pending approvals.',
@@ -52,8 +53,22 @@ export default function ChatPanel({
     'Send a reminder to Rahul about the overdue drawing.',
   ];
 
+
   const [voiceStatus, setVoiceStatus] = useState(''); // Visual status banner
   const silenceTimerRef = useRef(null);
+
+  // Auto-scroll to bottom on new message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
+
+  // Auto-start listening when triggerVoiceOnLoad is activated
+  useEffect(() => {
+    if (triggerVoiceOnLoad) {
+      startListening();
+    }
+  }, [triggerVoiceOnLoad]);
+
 
   // Dynamic voice recognition with noise suppression — stops after user finishes speaking
   const startListening = async () => {
@@ -238,14 +253,23 @@ export default function ChatPanel({
     setIsLoading(true);
 
     try {
+      const activeUser = (() => {
+        try {
+          const saved = localStorage.getItem('archvoice_user');
+          return saved ? JSON.parse(saved) : null;
+        } catch (e) { return null; }
+      })();
+
       const response = await fetch('/api/assistant/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: query,
-          projectContext: selectedProject
+          projectContext: selectedProject,
+          userName: activeUser?.name || 'User'
         })
       });
+
 
       const resData = await response.json();
 
@@ -270,10 +294,34 @@ export default function ChatPanel({
       // Speak response back
       speakText(resData.response);
 
+      // Auto download PDF if a specific document was targeted
+      if (resData.autoDownloadDoc) {
+        try {
+          const doc = resData.autoDownloadDoc;
+          const res = await fetch(`http://localhost:5000/api/documents/${doc.id}/download`);
+          if (res.ok) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const contentDisposition = res.headers.get('Content-Disposition');
+            const match = contentDisposition && contentDisposition.match(/filename="(.+)"/);
+            a.download = match ? match[1] : doc.name.replace(/\.[^.]+$/, '') + '.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+          }
+        } catch (e) {
+          console.error('Auto-download exception:', e);
+        }
+      }
+
       // Trigger automatic background refresh of dashboard if an action was taken
       if (onTaskUpdated && (resData.intent === 'CREATE_TASK' || resData.intent === 'UPDATE_TASK' || resData.intent === 'CREATE_REMINDER')) {
         onTaskUpdated();
       }
+
 
     } catch (error) {
       console.error('Chat AI submit error:', error);

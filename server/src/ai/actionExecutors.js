@@ -3,7 +3,7 @@ const prisma = require('../db/prisma');
 /**
  * Executes database operations based on structured AI intents and formats rich visual response widgets
  */
-async function executeAction(intentResult, userQuery) {
+async function executeAction(intentResult, userQuery, userName = 'User') {
   const { intent, entities, isDemoFallback } = intentResult;
   const projectFilter = entities.project;
   const personFilter = entities.person;
@@ -22,7 +22,21 @@ async function executeAction(intentResult, userQuery) {
   const projectId = projectObj ? projectObj.id : null;
 
   switch (intent) {
+    case 'GREETING': {
+      const firstName = (userName || 'there').trim().split(' ')[0];
+      const text = `Hey ${firstName}! Tell me what task do I need to do now?`;
+
+      return {
+        intent,
+        text,
+        widgetType: null,
+        data: null,
+        isDemoFallback
+      };
+    }
+
     case 'GET_PROJECT_STATUS': {
+
       let projects = [];
       if (projectId) {
         projects = [await prisma.project.findUnique({
@@ -404,22 +418,52 @@ async function executeAction(intentResult, userQuery) {
       const whereClause = {};
       if (projectId) whereClause.projectId = projectId;
 
-      const docs = await prisma.document.findMany({
+      const allDocs = await prisma.document.findMany({
         where: whereClause,
         include: { project: true },
         orderBy: { uploadedAt: 'desc' }
       });
 
-      const text = `Found ${docs.length} drawing and specification documents ${projectObj ? 'for ' + projectObj.name : ''}:`;
+      const docKeyword = (entities.document || entities.task || '').toLowerCase();
+      let autoDownloadDoc = null;
+
+      if (docKeyword) {
+        if (docKeyword === 'first' || docKeyword === '1st' || docKeyword === 'one') {
+          autoDownloadDoc = allDocs[0] || null;
+        } else if (docKeyword === 'second' || docKeyword === '2nd' || docKeyword === 'two') {
+          autoDownloadDoc = allDocs[1] || null;
+        } else if (docKeyword === 'third' || docKeyword === '3rd' || docKeyword === 'three') {
+          autoDownloadDoc = allDocs[2] || null;
+        } else if (docKeyword === 'fourth' || docKeyword === '4th' || docKeyword === 'four') {
+          autoDownloadDoc = allDocs[3] || null;
+        } else {
+          autoDownloadDoc = allDocs.find(d => 
+            d.name.toLowerCase().includes(docKeyword) || 
+            d.type.toLowerCase().includes(docKeyword)
+          ) || null;
+        }
+      }
+
+      const pName = projectObj ? projectObj.name : 'Project Alpha';
+      
+      let responseText = '';
+      if (autoDownloadDoc) {
+        responseText = `Downloading "${autoDownloadDoc.name}" for ${pName} now...`;
+      } else {
+        responseText = `Here are all ${allDocs.length} documents for ${pName}. Which document would you like me to download for you? You can specify a file (e.g. "HVAC schematic", "BOQ", "Electrical diagram"), or click Download PDF next to any file below.`;
+      }
 
       return {
         intent,
-        text,
+        text: responseText,
         widgetType: 'DOCUMENT_LIST',
-        data: docs,
+        data: allDocs,
+        autoDownloadDoc,
         isDemoFallback
       };
     }
+
+
 
     default: {
       const tasks = await prisma.task.findMany({ take: 3, include: { project: true } });
